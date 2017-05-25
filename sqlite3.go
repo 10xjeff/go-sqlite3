@@ -586,6 +586,7 @@ func (d *SQLiteDriver) Open(dsn string) (driver.Conn, error) {
 		// _vfs (jmellen)
 		if val := params.Get("_vfs"); val != "" {
 			vfsModule = C.CString(val)
+			defer C.free(unsafe.Pointer(vfsModule))
 		}
 
 		if !strings.HasPrefix(dsn, "file:") {

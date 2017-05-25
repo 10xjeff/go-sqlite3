@@ -541,6 +541,7 @@ func (d *SQLiteDriver) Open(dsn string) (driver.Conn, error) {
 	txlock := "BEGIN"
 	busyTimeout := 5000
 	pos := strings.IndexRune(dsn, '?')
+	var vfsModule *C.char
 	if pos >= 1 {
 		params, err := url.ParseQuery(dsn[pos+1:])
 		if err != nil {
@@ -582,6 +583,11 @@ func (d *SQLiteDriver) Open(dsn string) (driver.Conn, error) {
 			}
 		}
 
+		// _vfs (jmellen)
+		if val := params.Get("_vfs"); val != "" {
+			vfsModule = C.CString(val)
+		}
+
 		if !strings.HasPrefix(dsn, "file:") {
 			dsn = dsn[:pos]
 		}
@@ -594,7 +600,7 @@ func (d *SQLiteDriver) Open(dsn string) (driver.Conn, error) {
 		C.SQLITE_OPEN_FULLMUTEX|
 			C.SQLITE_OPEN_READWRITE|
 			C.SQLITE_OPEN_CREATE,
-		nil)
+		vfsModule)
 	if rv != 0 {
 		return nil, Error{Code: ErrNo(rv)}
 	}
